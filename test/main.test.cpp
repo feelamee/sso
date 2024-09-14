@@ -13,4 +13,10 @@ TEST_SUITE("sso")
         REQUIRE_EQ(s.size(), 0);
         REQUIRE_EQ(s.length(), 0);
     }
+
+    TEST_CASE("typename's")
+    {
+        REQUIRE(requires { typename sso::string::size_type; });
+        REQUIRE(requires { typename sso::string::value_type; });
+    }
 }
