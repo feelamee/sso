@@ -1,0 +1,112 @@
+Language:        Cpp
+Standard:        Auto
+
+TabWidth:        4
+UseTab:          Never
+
+ColumnLimit:     100
+
+AccessModifierOffset: -4
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands:   true
+AlignTrailingComments: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortLambdasOnASingleLine: true
+# AllowShortCompoundRequirementOnASingleLine: true
+AlwaysBreakAfterReturnType: AllDefinitions
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: true
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBraces: Custom
+BraceWrapping:   
+  AfterClass:            true
+  AfterControlStatement: true
+  AfterEnum:             true
+  AfterFunction:         true
+  AfterNamespace:        true
+  BeforeLambdaBody:      true
+  AfterStruct:           true
+  AfterUnion:            true
+  BeforeCatch:           false
+  BeforeElse:            false
+  IndentBraces:          false
+  AfterCaseLabel:        true
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializersBeforeComma: true
+BreakStringLiterals: true
+CommentPragmas:  '^ IWYU pragma:'
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: false
+DerivePointerAlignment: false
+DisableFormat:   false
+ExperimentalAutoDetectBinPacking: false
+
+IncludeBlocks: Regroup
+IncludeCategories: 
+  - Regex:           '^<benchmark/'
+    Priority:        1
+    SortPriority:    1
+  - Regex:           '^<doctest/'
+    Priority:        2
+    SortPriority:    2
+  - Regex:           '^<orbit'
+    Priority:        3
+    SortPriority:    3
+  - Regex:           '^<engine'
+    Priority:        3
+    SortPriority:    3
+  - Regex:           '^<SDL./'
+    Priority:        4
+    SortPriority:    4
+  - Regex:           '^<glm/'
+    Priority:        5
+    SortPriority:    5
+  - Regex:           '^<glad/'
+    Priority:        6
+    SortPriority:    6
+  - Regex:           '^"'
+    Priority:        7
+    SortPriority:    7
+  - Regex:           '.*'
+    Priority:        8
+    SortPriority:    8
+
+IncludeIsMainRegex: '$'
+IndentCaseLabels: false
+IndentWidth:     4
+IndentWrappedFunctionNames: false
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+PenaltyBreakBeforeFirstCallParameter: 300
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+PenaltyExcessCharacter: 1
+PenaltyReturnTypeOnItsOwnLine: 200
+PointerAlignment: Left
+ReflowComments:  true
+SortIncludes:    CaseSensitive
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles:  false
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+QualifierAlignment: Right

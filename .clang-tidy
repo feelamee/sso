@@ -1,0 +1,134 @@
+Checks: '-*, # disable all to specify needed manually
+
+        ,readability-identifier-naming
+        ,readability-convert-member-functions-to-static
+        ,-readability-isolate-declaration
+        ,-readability-magic-numbers
+        ,readability-make-member-function-const
+        ,readability-named-parameter
+        ,readability-non-const-parameter
+        ,readability-operators-representation
+        ,readability-redundant-access-specifiers
+        ,readability-qualified-auto
+        ,readability-redundant-casting
+        ,readability-redundant-control-flow
+        ,readability-simplify-boolean-expr
+        ,readability-simplify-subscript-expr
+        ,readability-suspicious-call-argument
+        ,readability-use-anyofallof
+        ,readability-use-std-min-max
+
+        ,modernize-use-override
+        ,modernize-use-nullptr
+        ,modernize-replace-auto-ptr
+        ,modernize-avoid-bind
+        ,modernize-avoid-c-arrays
+        ,modernize-loop-convert
+        ,modernize-pass-by-value
+        ,modernize-macro-to-enum
+        ,modernize-raw-string-literal
+        ,modernize-shrink-to-fit
+        ,modernize-unary-static-assert
+        ,modernize-use-auto
+        ,modernize-use-emplace
+        ,modernize-use-equals-delete
+        ,modernize-use-nodiscard
+        ,modernize-use-transparent-functors
+        ,modernize-use-using
+
+        ,performance-for-range-copy
+        ,performance-implicit-conversion-in-loop
+        ,performance-inefficient-algorithm
+        ,performance-inefficient-string-concatenation
+        ,performance-inefficient-vector-operation
+        ,performance-move-const-arg
+        ,performance-unnecessary-value-param
+
+        ,bugprone-reserved-identifier
+        ,bugprone-assignment-in-if-condition
+        ,bugprone-dangling-handle
+        ,bugprone-unused-raii
+        ,bugprone-unused-return-value 
+        ,bugprone-unused-local-non-trivial-variable    
+        ,bugprone-use-after-move
+
+        ,misc-unused-alias-decls
+        ,misc-unused-using-decls
+        ,misc-unused-parameters
+        ,misc-header-include-cycle
+        ,misc-static-assert
+        ,misc-redundant-expression
+        ,misc-use-internal-linkage
+        ,misc-unused-alias-decls
+        ,misc-unused-using-decls
+        ,misc-use-anonymous-namespace
+
+        ,cppcoreguidelines-*
+        ,-cppcoreguidelines-pro-type-union-access
+        ,-cppcoreguidelines-pro-type-vararg
+        ,-cppcoreguidelines-owning-memory
+        ,-cppcoreguidelines-avoid-magic-numbers
+        ,-cppcoreguidelines-avoid-do-while
+        ,clang-analyzer-*
+
+        ,misc-const-correctness
+
+        '
+
+CheckOptions:
+  - key:             readability-identifier-naming.NamespaceCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.ClassCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.StructCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.TypedefCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.EnumCase
+    value:           lower_case
+  - key:             readability-identifier-naming.EnumConstantCase
+    value:           UPPER_CASE
+
+  - key:             readability-identifier-naming.ScopedEnumCase
+    value:           lower_case
+  - key:             readability-identifier-naming.ScopedEnumConstantCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.FunctionCase
+    value:           lower_case
+  - key:             readability-identifier-naming.FunctionIgnoredRegexp
+    value:           ""
+
+  - key:             readability-identifier-naming.MacroDefinitionCase
+    value:           UPPER_CASE
+
+  - key:             readability-identifier-naming.VariableCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.StaticConstantCase
+    value:           lower_case
+  - key:             readability-identifier-naming.GlobalConstantCase
+    value:           lower_case
+
+  - key:             readability-identifier-naming.TypdefCase
+    value:           lower_case
+  - key:             readability-identifier-naming.TypeAliasCase
+    value:           lower_case
+  - key:             readability-identifier-naming.TypeAliasIgnoredRegexp
+    value:           ""
+
+  - key:             readability-identifier-naming.ParameterCase
+    value:           lower_case
+
+  - key:             bugprone-unused-return-value.AllowCastToVoid 
+    value:           true
+
+  - key:             performance-inefficient-vector-operation.VectorLikeClasses
+    value:           "" # semicolon-separated
+
+  - key:             readability-operators-representation.BinaryOperators
+    value:           "&&;&=;&;|;~;!;!=;||;|=;^;^="
