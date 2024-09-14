@@ -61,27 +61,18 @@ IncludeCategories:
   - Regex:           '^<doctest/'
     Priority:        2
     SortPriority:    2
-  - Regex:           '^<orbit'
+  - Regex:           '^<.*/'
     Priority:        3
     SortPriority:    3
-  - Regex:           '^<engine'
-    Priority:        3
-    SortPriority:    3
-  - Regex:           '^<SDL./'
+  - Regex:           '^<[^/]*>'
     Priority:        4
     SortPriority:    4
-  - Regex:           '^<glm/'
+  - Regex:           '^"'
     Priority:        5
     SortPriority:    5
-  - Regex:           '^<glad/'
+  - Regex:           '.*'
     Priority:        6
     SortPriority:    6
-  - Regex:           '^"'
-    Priority:        7
-    SortPriority:    7
-  - Regex:           '.*'
-    Priority:        8
-    SortPriority:    8
 
 IncludeIsMainRegex: '$'
 IndentCaseLabels: false
