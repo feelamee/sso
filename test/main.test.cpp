@@ -25,6 +25,7 @@ TEST_SUITE("sso")
         REQUIRE(requires { typename sso::string::const_pointer; });
         REQUIRE(requires { typename sso::string::pointer; });
         REQUIRE(requires { typename sso::string::allocator_type; });
+        REQUIRE(requires { typename sso::string::string_view; });
     }
 
     TEST_CASE("ctor's")
@@ -87,6 +88,31 @@ TEST_SUITE("sso")
             sso::string copy;
             copy = s;
             REQUIRE_EQ(copy, s);
+        }
+    }
+
+    TEST_CASE("ctor from `std::string_view`")
+    {
+        using value_type = char;
+        using string_view = std::basic_string_view<value_type>;
+        using string = sso::basic_string<value_type>;
+
+        {
+            string_view sv;
+            string s(sv);
+            REQUIRE_EQ(static_cast<string_view>(s), sv);
+        }
+
+        {
+            string_view sv{ "123" };
+            string s(sv);
+            REQUIRE_EQ(static_cast<string_view>(s), sv);
+        }
+
+        {
+            string_view sv{ "123" };
+            string s(sv);
+            REQUIRE_EQ(s, sv);
         }
     }
 }

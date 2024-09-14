@@ -2,10 +2,12 @@
 
 #include <sso/util.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <memory>
 #include <ranges>
+#include <string_view>
 #include <type_traits>
 
 namespace sso
@@ -21,6 +23,7 @@ public:
     using const_pointer = value_type const*;
     using pointer = value_type*;
     using allocator_type = Allocator;
+    using string_view = std::basic_string_view<Char>;
 
     constexpr basic_string() noexcept(noexcept(allocator_type()))
         : allocator_(allocator_type())
@@ -28,13 +31,8 @@ public:
     }
 
     basic_string(basic_string const& other)
-        : size_(other.size())
-        , capacity_(size() + 1)
-        , allocator_(other.get_allocator())
+        : basic_string(static_cast<string_view>(other))
     {
-        data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
-        std::copy(other.data(), other.data() + other.size(), data());
-        *(data() + length()) = '\0';
     }
 
     basic_string(basic_string&& other)
@@ -70,6 +68,25 @@ public:
         data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
         std::fill_n(data_, length(), value);
         *(data() + length()) = '\0';
+    }
+
+    basic_string(string_view other)
+    {
+        if (other.empty()) return;
+
+        size_ = other.size();
+        capacity_ = size() + 1;
+
+        data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
+        // TODO: use iterators
+        std::copy(other.data(), other.data() + other.size(), data());
+        *(data() + size()) = '\0';
+    }
+
+    constexpr
+    operator string_view() const noexcept
+    {
+        return std::basic_string_view<value_type>(data(), size());
     }
 
     ~basic_string()
@@ -147,6 +164,12 @@ public:
         }
 
         return res;
+    }
+
+    [[nodiscard]] friend constexpr bool
+    operator==(basic_string const& l, string_view const& r)
+    {
+        return static_cast<string_view>(l) == r;
     }
 
     friend constexpr void
