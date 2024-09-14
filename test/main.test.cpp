@@ -63,4 +63,30 @@ TEST_SUITE("sso")
         sso::basic_string<value_type, allocator_type> s2{ 0, '0', allocator };
         REQUIRE_EQ(s1.get_allocator(), allocator);
     }
+
+    TEST_CASE("copy/move ctor/assignment operator")
+    {
+        {
+            sso::string s;
+            sso::string copy(s);
+            REQUIRE_EQ(copy, s);
+
+            sso::string another;
+            another = copy;
+            REQUIRE_EQ(another, copy);
+        }
+
+        {
+            sso::string s(5, 'a');
+            sso::string copy(s);
+            REQUIRE_EQ(copy, s);
+        }
+
+        {
+            sso::string s(5, 'a');
+            sso::string copy;
+            copy = s;
+            REQUIRE_EQ(copy, s);
+        }
+    }
 }

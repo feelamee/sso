@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <ranges>
 #include <type_traits>
 
 namespace sso
@@ -26,7 +27,36 @@ public:
     {
     }
 
-    constexpr basic_string(allocator_type const& allocator) noexcept(std::is_nothrow_constructible_v<allocator_type>)
+    basic_string(basic_string const& other)
+        : size_(other.size())
+        , capacity_(size() + 1)
+        , allocator_(other.get_allocator())
+    {
+        data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
+        std::copy(other.data(), other.data() + other.size(), data());
+        *(data() + length()) = '\0';
+    }
+
+    basic_string(basic_string&& other)
+        : data_(other.data())
+        , size_(other.size())
+        , capacity_(other.capacity())
+    {
+    }
+
+    basic_string&
+    operator=(basic_string other)
+    {
+        using std::swap;
+
+        swap(*this, other);
+
+        return *this;
+    }
+
+    basic_string& operator=(basic_string&&) = delete;
+
+    explicit constexpr basic_string(allocator_type const& allocator) noexcept(std::is_nothrow_constructible_v<allocator_type>)
         : allocator_(allocator)
     {
     }
@@ -44,7 +74,10 @@ public:
 
     ~basic_string()
     {
-        std::allocator_traits<Allocator>::deallocate(allocator_, data(), capacity());
+        if (data())
+        {
+            std::allocator_traits<Allocator>::deallocate(allocator_, data(), capacity());
+        }
     }
 
     [[nodiscard]] constexpr bool
@@ -95,6 +128,35 @@ public:
     get_allocator() const
     {
         return allocator_;
+    }
+
+    [[nodiscard]] friend constexpr bool
+    operator==(basic_string const& l, basic_string const& r)
+    {
+        if (l.size() != r.size()) return false;
+
+        // TODO: replace with `std::equal` after implementing iterator
+        bool res = true;
+        for (auto const i : std::views::iota(size_type{ 0 }, l.size()))
+        {
+            if (l[i] != r[i])
+            {
+                res = false;
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    friend constexpr void
+    swap(basic_string& l, basic_string& r)
+    {
+        using std::swap;
+
+        swap(l.data_, r.data_);
+        swap(l.capacity_, r.capacity_);
+        swap(l.size_, r.size_);
     }
 
 private:
