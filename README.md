@@ -1,0 +1,1 @@
+sso - small string optimization
