@@ -26,6 +26,7 @@ TEST_SUITE("sso")
         REQUIRE(requires { typename sso::string::pointer; });
         REQUIRE(requires { typename sso::string::allocator_type; });
         REQUIRE(requires { typename sso::string::string_view; });
+        REQUIRE(requires { typename sso::string::reference; });
     }
 
     TEST_CASE("ctor's")
@@ -114,5 +115,45 @@ TEST_SUITE("sso")
             string s(sv);
             REQUIRE_EQ(s, sv);
         }
+    }
+
+    TEST_CASE("access")
+    {
+        {
+            sso::string s{ "hello, world" };
+            size_t const i{ 0 };
+            REQUIRE(i < s.size());
+            REQUIRE_EQ(s[i], 'h');
+            REQUIRE_EQ(*s.front(), 'h');
+            REQUIRE_EQ(*s.back(), 'd');
+        }
+
+        {
+            sso::string s;
+            REQUIRE(!s.front().has_value());
+            REQUIRE(!s.back().has_value());
+        }
+
+        {
+            char const* c_str{ "hello,world" };
+            sso::string s{ c_str };
+            REQUIRE_EQ(std::strcmp(s.c_str(), c_str), 0);
+        }
+
+        {
+            char const* c_str{ "" };
+            sso::string s{ c_str };
+            REQUIRE_EQ(std::strcmp(s.c_str(), c_str), 0);
+        }
+    }
+
+    TEST_CASE("clear")
+    {
+        sso::string s{ "hello, world" };
+        REQUIRE(!s.empty());
+        s.clear();
+        REQUIRE(s.empty());
+        REQUIRE_EQ(std::strcmp(s.c_str(), ""), 0);
+        REQUIRE_EQ(std::strcmp(s.data(), ""), 0);
     }
 }

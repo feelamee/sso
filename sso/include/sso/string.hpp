@@ -20,6 +20,7 @@ public:
     using size_type = std::size_t;
     using value_type = Char;
     using const_reference = value_type const&;
+    using reference = value_type&;
     using const_pointer = value_type const*;
     using pointer = value_type*;
     using allocator_type = Allocator;
@@ -30,19 +31,19 @@ public:
     {
     }
 
-    basic_string(basic_string const& other)
+    constexpr basic_string(basic_string const& other)
         : basic_string(static_cast<string_view>(other))
     {
     }
 
-    basic_string(basic_string&& other)
+    constexpr basic_string(basic_string&& other) noexcept
         : data_(other.data())
         , size_(other.size())
         , capacity_(other.capacity())
     {
     }
 
-    basic_string&
+    constexpr basic_string&
     operator=(basic_string other)
     {
         using std::swap;
@@ -52,14 +53,14 @@ public:
         return *this;
     }
 
-    basic_string& operator=(basic_string&&) = delete;
+    constexpr basic_string& operator=(basic_string&&) = delete;
 
     explicit constexpr basic_string(allocator_type const& allocator) noexcept(std::is_nothrow_constructible_v<allocator_type>)
         : allocator_(allocator)
     {
     }
 
-    basic_string(size_type size, value_type value, allocator_type const& allocator = allocator_type())
+    constexpr basic_string(size_type size, value_type value, allocator_type const& allocator = allocator_type())
         : size_(size)
         , capacity_(length() + 1)
         , allocator_(allocator)
@@ -70,7 +71,7 @@ public:
         *(data() + length()) = '\0';
     }
 
-    basic_string(string_view other)
+    explicit constexpr basic_string(string_view other)
     {
         if (other.empty()) return;
 
@@ -83,13 +84,18 @@ public:
         *(data() + size()) = '\0';
     }
 
+    explicit constexpr basic_string(value_type const* c_str)
+        : basic_string(string_view(c_str))
+    {
+    }
+
     constexpr
     operator string_view() const noexcept
     {
         return std::basic_string_view<value_type>(data(), size());
     }
 
-    ~basic_string()
+    constexpr ~basic_string()
     {
         if (data())
         {
@@ -134,7 +140,15 @@ public:
     }
 
     [[nodiscard]] constexpr const_reference
-    operator[](size_type position) const
+    operator[](size_type position) const noexcept
+    {
+        assert(position < size());
+
+        return *(data() + position);
+    }
+
+    [[nodiscard]] constexpr reference
+    operator[](size_type position) noexcept
     {
         assert(position < size());
 
@@ -148,7 +162,7 @@ public:
     }
 
     [[nodiscard]] friend constexpr bool
-    operator==(basic_string const& l, basic_string const& r)
+    operator==(basic_string const& l, basic_string const& r) noexcept
     {
         if (l.size() != r.size()) return false;
 
@@ -167,19 +181,51 @@ public:
     }
 
     [[nodiscard]] friend constexpr bool
-    operator==(basic_string const& l, string_view const& r)
+    operator==(basic_string const& l, string_view const& r) noexcept
     {
         return static_cast<string_view>(l) == r;
     }
 
     friend constexpr void
-    swap(basic_string& l, basic_string& r)
+    swap(basic_string& l, basic_string& r) noexcept
     {
         using std::swap;
 
         swap(l.data_, r.data_);
         swap(l.capacity_, r.capacity_);
         swap(l.size_, r.size_);
+    }
+
+    std::optional<value_type>
+    front() const noexcept
+    {
+        if (empty())
+            return std::nullopt;
+        else
+            return (*this)[0];
+    }
+
+    std::optional<value_type>
+    back() const noexcept
+    {
+        if (empty())
+            return std::nullopt;
+        else
+            return (*this)[size() - 1];
+    }
+
+    value_type const*
+    c_str() const noexcept
+    {
+        // TODO: for now, while SSO isn't implemented
+        return empty() ? "" : data();
+    }
+
+    void
+    clear() noexcept
+    {
+        if (size() > 0) (*this)[0] = value_type{};
+        size_ = 0;
     }
 
 private:
@@ -191,6 +237,6 @@ private:
     Allocator allocator_;
 };
 
-using string = basic_string<char8_t>;
+using string = basic_string<char>;
 
 } // namespace sso
