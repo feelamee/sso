@@ -24,6 +24,7 @@ TEST_SUITE("sso")
         REQUIRE(requires { typename sso::string::const_reference; });
         REQUIRE(requires { typename sso::string::const_pointer; });
         REQUIRE(requires { typename sso::string::pointer; });
+        REQUIRE(requires { typename sso::string::allocator_type; });
     }
 
     TEST_CASE("ctor's")
@@ -51,6 +52,15 @@ TEST_SUITE("sso")
         {
             REQUIRE_EQ(s[i], value);
         }
-        REQUIRE(s[0] == 'a');
+    }
+
+    TEST_CASE("allocator aware")
+    {
+        using value_type = char;
+        using allocator_type = std::allocator<value_type>;
+        allocator_type const allocator;
+        sso::basic_string<value_type, allocator_type> s1{ allocator };
+        sso::basic_string<value_type, allocator_type> s2{ 0, '0', allocator };
+        REQUIRE_EQ(s1.get_allocator(), allocator);
     }
 }
