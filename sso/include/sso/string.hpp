@@ -65,9 +65,8 @@ public:
         , capacity_(length() + 1)
         , allocator_(allocator)
     {
-
         data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
-        std::fill_n(data_, length(), value);
+        std::fill_n(data(), length(), value);
         *(data() + length()) = '\0';
     }
 
@@ -196,25 +195,39 @@ public:
         swap(l.size_, r.size_);
     }
 
-    std::optional<value_type>
+    const_reference
     front() const noexcept
     {
-        if (empty())
-            return std::nullopt;
-        else
-            return (*this)[0];
+        assert(!empty());
+
+        return (*this)[0];
     }
 
-    std::optional<value_type>
+    const_reference
     back() const noexcept
     {
-        if (empty())
-            return std::nullopt;
-        else
-            return (*this)[size() - 1];
+        assert(!empty());
+
+        return (*this)[size() - 1];
     }
 
-    value_type const*
+    reference
+    front() noexcept
+    {
+        assert(!empty());
+
+        return (*this)[0];
+    }
+
+    reference
+    back() noexcept
+    {
+        assert(!empty());
+
+        return (*this)[size() - 1];
+    }
+
+    const_pointer
     c_str() const noexcept
     {
         // TODO: for now, while SSO isn't implemented
@@ -224,7 +237,7 @@ public:
     void
     clear() noexcept
     {
-        if (size() > 0) (*this)[0] = value_type{};
+        if (size() > 0) front() = value_type{};
         size_ = 0;
     }
 

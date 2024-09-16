@@ -124,14 +124,8 @@ TEST_SUITE("sso")
             size_t const i{ 0 };
             REQUIRE(i < s.size());
             REQUIRE_EQ(s[i], 'h');
-            REQUIRE_EQ(*s.front(), 'h');
-            REQUIRE_EQ(*s.back(), 'd');
-        }
-
-        {
-            sso::string s;
-            REQUIRE(!s.front().has_value());
-            REQUIRE(!s.back().has_value());
+            REQUIRE_EQ(s.front(), 'h');
+            REQUIRE_EQ(s.back(), 'd');
         }
 
         {
