@@ -4,12 +4,12 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstddef>
-#include <iostream>
+#include <format>
 #include <memory>
 #include <ranges>
 #include <string_view>
-#include <type_traits>
+
+#include "sso/detail/basic_string_buffer.hpp"
 
 namespace sso
 {
@@ -17,34 +17,45 @@ namespace sso
 template <typename Char, typename Allocator = std::allocator<Char>>
 struct basic_string
 {
+private:
+    using allocator_traits = std::allocator_traits<Allocator>;
+
 public:
-    using size_type = std::size_t;
-    using value_type = Char;
+    using size_type = allocator_traits::size_type;
+    using value_type = allocator_traits::value_type;
     using const_reference = value_type const&;
     using reference = value_type&;
-    using const_pointer = value_type const*;
-    using pointer = value_type*;
-    using allocator_type = Allocator;
-    using string_view = std::basic_string_view<Char>;
+    using const_pointer = allocator_traits::const_pointer;
+    using pointer = allocator_traits::pointer;
+    using allocator_type = allocator_traits::allocator_type;
 
-    constexpr basic_string() noexcept(noexcept(allocator_type()))
-        : allocator_(allocator_type())
-    {
-    }
+    using string_view = std::basic_string_view<Char>;
 
     constexpr basic_string(basic_string const& other)
         : basic_string(static_cast<string_view>(other))
     {
     }
 
-    constexpr basic_string(basic_string&& other) noexcept
-        : data_(other.data())
-        , size_(other.size())
-        , capacity_(other.capacity())
+    constexpr basic_string(basic_string&& other) noexcept { swap(*this, other); }
+
+    explicit constexpr basic_string(allocator_type const& allocator = allocator_type())
+        : buffer(allocator)
     {
-        other.data_ = nullptr;
-        other.size_ = 0;
-        other.capacity_ = 0;
+    }
+
+    constexpr basic_string(size_type size, value_type value, allocator_type const& allocator = allocator_type())
+        : buffer(size, value, allocator)
+    {
+    }
+
+    explicit constexpr basic_string(string_view other)
+        : buffer(std::move(other))
+    {
+    }
+
+    explicit constexpr basic_string(value_type const* c_str)
+        : basic_string(string_view(c_str))
+    {
     }
 
     constexpr basic_string&
@@ -59,52 +70,13 @@ public:
 
     constexpr basic_string& operator=(basic_string&&) = delete;
 
-    explicit constexpr basic_string(allocator_type const& allocator) noexcept(std::is_nothrow_constructible_v<allocator_type>)
-        : allocator_(allocator)
-    {
-    }
-
-    constexpr basic_string(size_type size, value_type value, allocator_type const& allocator = allocator_type())
-        : size_(size)
-        , capacity_(length() + 1)
-        , allocator_(allocator)
-    {
-        data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
-        std::fill_n(data(), length(), value);
-        *(data() + length()) = '\0';
-    }
-
-    explicit constexpr basic_string(string_view other)
-    {
-        if (other.empty()) return;
-
-        size_ = other.size();
-        capacity_ = size() + 1;
-
-        data_ = std::allocator_traits<Allocator>::allocate(allocator_, capacity());
-        // TODO: use iterators
-        std::copy(other.data(), other.data() + other.size(), data());
-        *(data() + size()) = '\0';
-    }
-
-    explicit constexpr basic_string(value_type const* c_str)
-        : basic_string(string_view(c_str))
-    {
-    }
-
-    constexpr
+    [[nodiscard]] constexpr
     operator string_view() const noexcept
     {
         return std::basic_string_view<value_type>(data(), size());
     }
 
-    constexpr ~basic_string()
-    {
-        if (data())
-        {
-            std::allocator_traits<Allocator>::deallocate(allocator_, data(), capacity());
-        }
-    }
+    constexpr ~basic_string() = default;
 
     [[nodiscard]] constexpr bool
     empty() const noexcept
@@ -115,13 +87,13 @@ public:
     [[nodiscard]] constexpr size_type
     capacity() const noexcept
     {
-        return capacity_;
+        return buffer.capacity();
     }
 
     [[nodiscard]] constexpr size_type
     size() const noexcept
     {
-        return size_;
+        return buffer.length();
     }
 
     [[nodiscard]] constexpr size_type
@@ -134,14 +106,14 @@ public:
     [[nodiscard]] constexpr const_pointer
     data() const noexcept
     {
-        return data_;
+        return buffer.data();
     }
 
     //! @return [ `data()`, `data() + size()` ).
     [[nodiscard]] constexpr pointer
     data() noexcept
     {
-        return data_;
+        return buffer.data();
     }
 
     //! @pre `position < size()`
@@ -165,7 +137,7 @@ public:
     [[nodiscard]] constexpr allocator_type
     get_allocator() const
     {
-        return allocator_;
+        return buffer.get_allocator();
     }
 
     [[nodiscard]] friend constexpr bool
@@ -198,13 +170,11 @@ public:
     {
         using std::swap;
 
-        swap(l.data_, r.data_);
-        swap(l.capacity_, r.capacity_);
-        swap(l.size_, r.size_);
+        swap(l.buffer, r.buffer);
     }
 
     //! @pre `!empty()`
-    const_reference
+    [[nodiscard]] constexpr const_reference
     front() const noexcept
     {
         assert(!empty());
@@ -213,7 +183,7 @@ public:
     }
 
     //! @pre `!empty()`
-    const_reference
+    [[nodiscard]] constexpr const_reference
     back() const noexcept
     {
         assert(!empty());
@@ -222,7 +192,7 @@ public:
     }
 
     //! @pre `!empty()`
-    reference
+    [[nodiscard]] constexpr reference
     front() noexcept
     {
         assert(!empty());
@@ -231,7 +201,7 @@ public:
     }
 
     //! @pre `!empty()`
-    reference
+    [[nodiscard]] constexpr reference
     back() noexcept
     {
         assert(!empty());
@@ -240,27 +210,33 @@ public:
     }
 
     //! @return null-terminated array [ `data()`, `data() + size()` ]
-    const_pointer
+    [[nodiscard]] constexpr const_pointer
     c_str() const noexcept
     {
         // TODO: for now, while SSO isn't implemented
         return empty() ? "" : data();
     }
 
-    void
+    constexpr void
     clear() noexcept
     {
-        if (size() > 0) front() = value_type{};
-        size_ = 0;
+        buffer.clear();
+    }
+
+    //! @throw `std::out_of_range` if `position >= size()`
+    [[nodiscard]] constexpr reference
+    at(size_type position)
+    {
+        if (auto const size = length(); position >= size)
+        {
+            throw std::out_of_range(std::format("`position >= size()`\n`{} >= {}`", position, size));
+        }
+
+        return (*this)[position];
     }
 
 private:
-    value_type* data_{ nullptr };
-    size_type size_{ 0 };
-    size_type capacity_{ 0 };
-
-    // TODO: move to base class to eliminate size for stateless allocator
-    Allocator allocator_;
+    detail::basic_string_buffer<value_type, allocator_type> buffer;
 };
 
 using string = basic_string<char>;

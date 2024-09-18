@@ -1,4 +1,6 @@
+#include <type_traits>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_VOID_CAST_EXPRESSIONS
 #include <doctest/doctest.h>
 
 #include <sso/string.hpp>
@@ -159,4 +161,19 @@ TEST_SUITE("sso")
         sso::string s{ std::move(hello_world) };
         REQUIRE_EQ(std::strcmp(s.c_str(), c_str), 0);
     }
+
+    TEST_CASE("at()")
+    {
+        {
+            sso::string s;
+            REQUIRE_THROWS_AS(s.at(1), std::out_of_range);
+        }
+        {
+            char const* const hello_world{ "hello, world" };
+            sso::string s{ hello_world };
+            REQUIRE_EQ(s.at(1), hello_world[1]);
+        }
+    }
+
+    TEST_CASE("default constructible") { REQUIRE(std::is_default_constructible_v<sso::string>); }
 }
