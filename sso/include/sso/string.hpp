@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <iostream>
 #include <memory>
 #include <ranges>
 #include <string_view>
@@ -41,6 +42,9 @@ public:
         , size_(other.size())
         , capacity_(other.capacity())
     {
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
     }
 
     constexpr basic_string&

@@ -150,4 +150,13 @@ TEST_SUITE("sso")
         REQUIRE_EQ(std::strcmp(s.c_str(), ""), 0);
         REQUIRE_EQ(std::strcmp(s.data(), ""), 0);
     }
+
+    TEST_CASE("ctor from temporary object")
+    {
+        char const* const c_str{ "hello, world" };
+        sso::string hello_world{ c_str };
+
+        sso::string s{ std::move(hello_world) };
+        REQUIRE_EQ(std::strcmp(s.c_str(), c_str), 0);
+    }
 }
