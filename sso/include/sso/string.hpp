@@ -126,18 +126,21 @@ public:
         return size();
     }
 
+    //! @return [ `data()`, `data() + size()` ).
     [[nodiscard]] constexpr const_pointer
     data() const noexcept
     {
         return data_;
     }
 
+    //! @return [ `data()`, `data() + size()` ).
     [[nodiscard]] constexpr pointer
     data() noexcept
     {
         return data_;
     }
 
+    //! @pre `position < size()`
     [[nodiscard]] constexpr const_reference
     operator[](size_type position) const noexcept
     {
@@ -146,6 +149,7 @@ public:
         return *(data() + position);
     }
 
+    //! @pre `position < size()`
     [[nodiscard]] constexpr reference
     operator[](size_type position) noexcept
     {
@@ -195,6 +199,7 @@ public:
         swap(l.size_, r.size_);
     }
 
+    //! @pre `!empty()`
     const_reference
     front() const noexcept
     {
@@ -203,6 +208,7 @@ public:
         return (*this)[0];
     }
 
+    //! @pre `!empty()`
     const_reference
     back() const noexcept
     {
@@ -211,6 +217,7 @@ public:
         return (*this)[size() - 1];
     }
 
+    //! @pre `!empty()`
     reference
     front() noexcept
     {
@@ -219,6 +226,7 @@ public:
         return (*this)[0];
     }
 
+    //! @pre `!empty()`
     reference
     back() noexcept
     {
@@ -227,6 +235,7 @@ public:
         return (*this)[size() - 1];
     }
 
+    //! @return null-terminated array [ `data()`, `data() + size()` ]
     const_pointer
     c_str() const noexcept
     {
