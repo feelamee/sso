@@ -13,13 +13,19 @@ FetchContent_Declare(
   GIT_TAG "v2.4.11")
 FetchContent_MakeAvailable(doctest)
 
-include("../cmake/pedantic.cmake")
-include("../cmake/sanitizer.cmake")
-
 add_executable(test main.test.cpp)
 target_compile_features(test PRIVATE cxx_std_20)
-target_link_libraries(test PRIVATE sanitizer::address sanitizer::undefined
-                                   pedantic::pedantic doctest::doctest)
+target_link_libraries(test PRIVATE doctest::doctest)
+
+if(SSO_PEDANTIC)
+  include("../cmake/pedantic.cmake")
+  target_link_libraries(test PRIVATE pedantic::pedantic)
+endif()
+
+if(SSO_SANITIZER)
+  include("../cmake/sanitizer.cmake")
+  target_link_libraries(test PRIVATE sanitizer::address sanitizer::undefined)
+endif()
 
 add_subdirectory("../sso" "${CMAKE_BINARY_DIR}/sso")
 target_link_libraries(test PRIVATE sso::sso)

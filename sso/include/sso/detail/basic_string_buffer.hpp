@@ -149,7 +149,7 @@ public:
     }
 
 private:
-    value_type* data_{ nullptr };
+    pointer data_{ nullptr };
     size_type size_{ 0 };
     size_type capacity_{ 0 };
 

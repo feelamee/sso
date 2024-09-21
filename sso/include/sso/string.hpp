@@ -18,13 +18,14 @@ template <typename Char, typename Allocator = std::allocator<Char>>
 struct basic_string
 {
 private:
-    using allocator_traits = std::allocator_traits<Allocator>;
+    using basic_string_buffer = detail::basic_string_buffer<Char, Allocator>;
+    using allocator_traits = std::allocator_traits<typename basic_string_buffer::allocator_type>;
 
 public:
     using size_type = allocator_traits::size_type;
     using value_type = allocator_traits::value_type;
-    using const_reference = value_type const&;
-    using reference = value_type&;
+    using const_reference = basic_string_buffer::const_reference;
+    using reference = basic_string_buffer::reference;
     using const_pointer = allocator_traits::const_pointer;
     using pointer = allocator_traits::pointer;
     using allocator_type = allocator_traits::allocator_type;
@@ -229,7 +230,7 @@ public:
     {
         if (auto const size = length(); position >= size)
         {
-            throw std::out_of_range(std::format("`position >= size()`\n`{} >= {}`", position, size));
+            throw std::out_of_range(std::format("`position >= size()` is `{} >= {}`", position, size));
         }
 
         return (*this)[position];

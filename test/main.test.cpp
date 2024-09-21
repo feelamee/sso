@@ -1,4 +1,3 @@
-#include <type_traits>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #define DOCTEST_CONFIG_VOID_CAST_EXPRESSIONS
 #include <doctest/doctest.h>
@@ -6,6 +5,7 @@
 #include <sso/string.hpp>
 
 #include <ranges>
+#include <type_traits>
 
 TEST_SUITE("sso")
 {
@@ -175,5 +175,8 @@ TEST_SUITE("sso")
         }
     }
 
-    TEST_CASE("default constructible") { REQUIRE(std::is_default_constructible_v<sso::string>); }
+    TEST_CASE("default constructible")
+    {
+        REQUIRE(std::is_default_constructible_v<sso::string>);
+    }
 }
