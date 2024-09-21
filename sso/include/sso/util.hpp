@@ -1,13 +1,20 @@
 #pragma once
 
 #include <cstdlib>
+#include <format>
+#include <iostream>
+#include <source_location>
+#include <type_traits>
 
 namespace sso::detail
 {
 
 [[noreturn]] inline void
-unimplemented()
+unimplemented(std::source_location location = std::source_location::current())
 {
+    std::cout << std::format("{}:{}:{}: in {}\n\tunimplemented...", location.file_name(),
+                             location.line(), location.column(), location.function_name())
+              << std::endl;
     std::abort();
 }
 

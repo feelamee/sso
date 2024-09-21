@@ -1,6 +1,13 @@
 #pragma once
 
+#include <algorithm>
+#include <array>
+#include <cassert>
 #include <memory>
+#include <ranges>
+#include <span>
+
+#include "sso/util.hpp"
 
 namespace sso::detail
 {
@@ -22,11 +29,6 @@ public:
 
     using string_view = std::basic_string_view<Char>;
 
-    constexpr basic_string_buffer() noexcept(noexcept(allocator_type()))
-        : allocator_(allocator_type())
-    {
-    }
-
     constexpr basic_string_buffer(basic_string_buffer const& other)
         : basic_string_buffer(static_cast<string_view>(other))
     {
@@ -35,37 +37,43 @@ public:
     explicit constexpr basic_string_buffer(allocator_type const& allocator) noexcept(std::is_nothrow_constructible_v<allocator_type>)
         : allocator_(allocator)
     {
+        std::ignore = std::construct_at(reinterpret_cast<short_buf*>(data_.data()));
+
+        data_.back() = std::byte{};
+
+        assert(!is_long());
+    }
+
+    constexpr basic_string_buffer() noexcept(noexcept(allocator_type()))
+        : basic_string_buffer(allocator_type())
+    {
     }
 
     constexpr basic_string_buffer(basic_string_buffer&& other) noexcept
-        : data_(other.data())
-        , size_(other.size())
-        , capacity_(other.capacity())
     {
-        other.data_ = nullptr;
-        other.size_ = 0;
-        other.capacity_ = 0;
+        unimplemented();
+        // other.data_ = nullptr;
+        // other.size_ = 0;
+        // other.capacity_ = 0;
     }
 
     constexpr basic_string_buffer(size_type size, value_type value,
                                   allocator_type const& allocator = allocator_type())
-        : size_(size)
-        , capacity_(length() + 1)
-        , allocator_(allocator)
     {
-        data_ = allocator_traits::allocate(allocator_, capacity());
+        reserve(size);
         std::fill_n(data(), length(), value);
-        *(data() + length()) = '\0';
+        *(data() + length()) = value_type{};
     }
 
     explicit constexpr basic_string_buffer(string_view other)
     {
+        unimplemented();
         if (other.empty()) return;
 
-        size_ = other.size();
-        capacity_ = length() + 1;
+        // size_ = other.size();
+        // capacity_ = length() + 1;
 
-        data_ = allocator_traits::allocate(allocator_, capacity());
+        // data_ = allocator_traits::allocate(allocator_, capacity());
         // TODO: use iterators
         std::copy(other.data(), other.data() + other.size(), data());
         *(data() + length()) = '\0';
@@ -85,42 +93,50 @@ public:
 
     ~basic_string_buffer()
     {
-        if (data())
+        if (is_long())
         {
-            allocator_traits::deallocate(allocator_, data(), capacity());
+            allocator_traits::deallocate(allocator(), data(), capacity());
         }
     }
 
     [[nodiscard]] constexpr size_type
     length() const
     {
-        return size_;
+        if (is_long()) return get_long()->size_;
+
+        return get_short()->length();
     }
 
     [[nodiscard]] constexpr size_type
     capacity() const
     {
-        return capacity_;
+        if (is_long()) return get_long()->capacity_;
+
+        return short_buf::capacity;
     }
 
     //! @return [ `data()`, `data() + size()` ).
     [[nodiscard]] constexpr const_pointer
     data() const noexcept
     {
-        return data_;
+        if (is_long()) return get_long()->data_;
+
+        return get_short()->data_.data();
     }
 
     //! @return [ `data()`, `data() + size()` ).
     [[nodiscard]] constexpr pointer
     data() noexcept
     {
-        return data_;
+        if (is_long()) return get_long()->data_;
+
+        return get_short()->data_.data();
     }
 
     [[nodiscard]] constexpr allocator_type
     get_allocator() const
     {
-        return allocator_;
+        return allocator();
     }
 
     friend constexpr void
@@ -128,33 +144,175 @@ public:
     {
         using std::swap;
 
-        swap(l.data_, r.data_);
-        swap(l.capacity_, r.capacity_);
-        swap(l.size_, r.size_);
+        l.data_.swap(r.data_);
     }
 
     //! @return null-terminated array [ `data()`, `data() + size()` ]
     [[nodiscard]] constexpr const_pointer
     c_str() const noexcept
     {
-        // TODO: for now, while SSO isn't implemented
-        return length() == 0 ? "" : data();
+        return data();
     }
 
     constexpr void
     clear() noexcept
     {
-        if (length() > 0) *data_ = value_type{};
-        size_ = 0;
+        if (is_long())
+        {
+            auto* const buf{ get_long() };
+            *(buf->data_) = value_type{};
+            buf->size_ = 0;
+        } else
+        {
+            auto* const buf{ get_short() };
+            buf->data_.front() = value_type{};
+        }
+    }
+
+    [[nodiscard]] constexpr size_type
+    max_size() const
+    {
+        unimplemented();
+    }
+
+    constexpr void
+    reserve(size_type count)
+    {
+        if (count <= capacity()) return;
+        if (count > max_size())
+            throw std::length_error("`count` must not be greater than `max_size()`");
+
+        short_buf old_buf{ is_long() ? short_buf{} : set_long() };
+
+        if (data() != nullptr) allocator_traits::deallocate(allocator(), data(), capacity());
+
+        auto* const buf{ get_long() };
+        buf->capacity_ = count + 1;
+        buf->data_ = allocator_traits::allocate(allocator(), buf->capacity_);
+        std::ranges::copy(std::span{ old_buf.data_.data(), old_buf.length() }, buf->data_);
+        buf->size_ = old_buf.length();
+        *(buf->data_ + buf->size_) = value_type{};
     }
 
 private:
-    pointer data_{ nullptr };
-    size_type size_{ 0 };
-    size_type capacity_{ 0 };
+    struct long_buf
+    {
+        pointer data_{ nullptr };
+        size_type size_{ 0 };
+        size_type capacity_ : (sizeof(size_type) - 1) * CHAR_BIT{ 0 };
+    };
 
-    // TODO: move to base class to eliminate size for stateless allocator
-    Allocator allocator_;
+    struct short_buf
+    {
+        static constexpr size_type capacity{ sizeof(long_buf) / sizeof(value_type) };
+        static_assert(capacity > 1);
+
+        size_type
+        length() const
+        {
+            return std::ranges::find(data_, value_type{}) - begin(data_);
+        }
+
+        std::array<value_type, capacity> data_{};
+    };
+
+    [[nodiscard]] constexpr bool
+    is_long() const
+    {
+        return data_.back() != std::byte{};
+    }
+
+    //! @pre `!is_long()`
+    //! @post `is_long()`
+    constexpr short_buf
+    set_long()
+    {
+        assert(!is_long());
+
+        short_buf const old_buf = *get_short();
+
+        std::destroy_at(get_short());
+        std::ignore = std::construct_at(reinterpret_cast<long_buf*>(data_.data()));
+
+        data_.back() = std::byte{ 1 };
+
+        assert(is_long());
+
+        return old_buf;
+    }
+
+    //! @pre `is_long()`
+    //! @post `!is_long()`
+    constexpr long_buf
+    set_short()
+    {
+        assert(is_long());
+
+        long_buf const old_buf = *get_long();
+
+        std::destroy_at(get_long());
+        std::ignore = std::construct_at(reinterpret_cast<short_buf*>(data_.data()));
+
+        data_.back() = std::byte{};
+
+        assert(!is_long());
+
+        return old_buf;
+    }
+
+    [[nodiscard]] constexpr allocator_type&
+    allocator()
+    {
+        return allocator_;
+    }
+
+    [[nodiscard]] constexpr allocator_type const&
+    allocator() const
+    {
+        return allocator_;
+    }
+
+    //! @pre `is_long()`
+    [[nodiscard]] constexpr long_buf const*
+    get_long() const
+    {
+        assert(is_long());
+
+        return reinterpret_cast<long_buf const*>(data_.data());
+    }
+
+    //! @pre `!is_long()`
+    [[nodiscard]] constexpr short_buf const*
+    get_short() const
+    {
+        assert(!is_long());
+
+        return reinterpret_cast<short_buf const*>(data_.data());
+    }
+
+    [[nodiscard]] constexpr long_buf*
+    get_long()
+    {
+        assert(is_long());
+
+        return reinterpret_cast<long_buf*>(data_.data());
+    }
+
+    //! @pre `!is_long()`
+    [[nodiscard]] constexpr short_buf*
+    get_short()
+    {
+        assert(!is_long());
+
+        return reinterpret_cast<short_buf*>(data_.data());
+    }
+
+    static_assert(sizeof(long_buf) == sizeof(short_buf),
+                  "size of long and short buffers must be equal");
+
+    std::array<std::byte, sizeof(long_buf)> data_{};
+
+    [[no_unique_address]] Allocator allocator_;
 };
 
 template <typename Char>

@@ -13,10 +13,8 @@ TEST_SUITE("sso")
     {
         sso::string s;
         REQUIRE(s.empty());
-        REQUIRE_EQ(s.capacity(), 0);
         REQUIRE_EQ(s.size(), 0);
         REQUIRE_EQ(s.length(), 0);
-        REQUIRE_EQ(s.data(), nullptr);
     }
 
     TEST_CASE("typename's")
@@ -178,5 +176,6 @@ TEST_SUITE("sso")
     TEST_CASE("default constructible")
     {
         REQUIRE(std::is_default_constructible_v<sso::string>);
+        static_assert(sizeof(sso::string) == 24);
     }
 }
