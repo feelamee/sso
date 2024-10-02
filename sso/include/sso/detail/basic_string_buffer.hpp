@@ -26,6 +26,8 @@ public:
     using const_pointer = allocator_traits::const_pointer;
     using pointer = allocator_traits::pointer;
     using allocator_type = allocator_traits::allocator_type;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
 
     using string_view = std::basic_string_view<Char>;
 
@@ -61,29 +63,37 @@ public:
                                   allocator_type const& allocator = allocator_type())
     {
         reserve(size);
-        std::fill_n(data(), length(), value);
+        std::fill_n(data(), size, value);
         *(data() + length()) = value_type{};
+
+        if (is_long()) get_long()->size_ = size;
     }
 
     explicit constexpr basic_string_buffer(string_view other)
     {
-        unimplemented();
-        if (other.empty()) return;
+        if (other.size() >= short_buf::capacity)
+        {
+            set_long();
+            auto* const buf{ get_long() };
+            reserve(other.size() + 1);
 
-        // size_ = other.size();
-        // capacity_ = length() + 1;
+            std::ranges::copy(other, this->begin());
+            buf->size_ = other.size();
+            *(buf->data_ + buf->size_) = value_type{};
+        } else
+        {
+            set_short();
 
-        // data_ = allocator_traits::allocate(allocator_, capacity());
-        // TODO: use iterators
-        std::copy(other.data(), other.data() + other.size(), data());
-        *(data() + length()) = '\0';
+            std::ranges::copy(other, this->begin());
+
+            auto* const buf{ get_short() };
+            *(buf->data_.data() + buf->length()) = value_type{};
+        }
     }
 
     constexpr basic_string_buffer&
     operator=(basic_string_buffer other)
     {
-        using std::swap;
-
         swap(*this, other);
 
         return *this;
@@ -144,7 +154,7 @@ public:
     {
         using std::swap;
 
-        l.data_.swap(r.data_);
+        swap(l.data_, r.data_);
     }
 
     //! @return null-terminated array [ `data()`, `data() + size()` ]
@@ -175,46 +185,55 @@ public:
         unimplemented();
     }
 
+    //! @throw `std::length_error` if `count > max_size()`
     constexpr void
     reserve(size_type count)
     {
-        if (count <= capacity()) return;
+        if (count + 1 <= capacity()) return;
         if (count > max_size())
             throw std::length_error("`count` must not be greater than `max_size()`");
 
-        short_buf old_buf{ is_long() ? short_buf{} : set_long() };
+        basic_string_buffer buf;
+        buf.set_long();
+        auto* long_buf = buf.get_long();
+        long_buf->capacity_ = count + 1;
+        long_buf->data_ = allocator_traits::allocate(allocator(), long_buf->capacity_);
 
-        if (data() != nullptr) allocator_traits::deallocate(allocator(), data(), capacity());
+        std::ranges::copy(*this, buf.begin());
 
-        auto* const buf{ get_long() };
-        buf->capacity_ = count + 1;
-        buf->data_ = allocator_traits::allocate(allocator(), buf->capacity_);
-        std::ranges::copy(std::span{ old_buf.data_.data(), old_buf.length() }, buf->data_);
-        buf->size_ = old_buf.length();
-        *(buf->data_ + buf->size_) = value_type{};
+        long_buf->size_ = length();
+        *(long_buf->data_ + long_buf->size_) = value_type{};
+
+        swap(*this, buf);
+    }
+
+    [[nodiscard]] constexpr iterator
+    begin()
+    {
+        return is_long() ? get_long()->begin() : get_short()->begin();
+    }
+
+    [[nodiscard]] constexpr iterator
+    end()
+    {
+        return is_long() ? get_long()->end() : get_short()->end();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    begin() const
+    {
+        return is_long() ? get_long()->begin() : get_short()->begin();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    end() const
+    {
+        return is_long() ? get_long()->end() : get_short()->end();
     }
 
 private:
-    struct long_buf
-    {
-        pointer data_{ nullptr };
-        size_type size_{ 0 };
-        size_type capacity_ : (sizeof(size_type) - 1) * CHAR_BIT{ 0 };
-    };
-
-    struct short_buf
-    {
-        static constexpr size_type capacity{ sizeof(long_buf) / sizeof(value_type) };
-        static_assert(capacity > 1);
-
-        size_type
-        length() const
-        {
-            return std::ranges::find(data_, value_type{}) - begin(data_);
-        }
-
-        std::array<value_type, capacity> data_{};
-    };
+    struct long_buf;
+    struct short_buf;
 
     [[nodiscard]] constexpr bool
     is_long() const
@@ -222,42 +241,34 @@ private:
         return data_.back() != std::byte{};
     }
 
-    //! @pre `!is_long()`
     //! @post `is_long()`
-    constexpr short_buf
+    constexpr void
     set_long()
     {
-        assert(!is_long());
+        if (!is_long())
+        {
+            std::destroy_at(get_short());
+            std::ignore = std::construct_at(reinterpret_cast<long_buf*>(data_.data()));
 
-        short_buf const old_buf = *get_short();
-
-        std::destroy_at(get_short());
-        std::ignore = std::construct_at(reinterpret_cast<long_buf*>(data_.data()));
-
-        data_.back() = std::byte{ 1 };
+            data_.back() = std::byte{ 1 };
+        }
 
         assert(is_long());
-
-        return old_buf;
     }
 
-    //! @pre `is_long()`
     //! @post `!is_long()`
-    constexpr long_buf
+    constexpr void
     set_short()
     {
-        assert(is_long());
+        if (is_long())
+        {
+            std::destroy_at(get_long());
+            std::ignore = std::construct_at(reinterpret_cast<short_buf*>(data_.data()));
 
-        long_buf const old_buf = *get_long();
-
-        std::destroy_at(get_long());
-        std::ignore = std::construct_at(reinterpret_cast<short_buf*>(data_.data()));
-
-        data_.back() = std::byte{};
+            data_.back() = std::byte{};
+        }
 
         assert(!is_long());
-
-        return old_buf;
     }
 
     [[nodiscard]] constexpr allocator_type&
@@ -315,9 +326,92 @@ private:
     [[no_unique_address]] Allocator allocator_;
 };
 
-template <typename Char>
-struct iterator
+template <typename Char, typename Allocator>
+struct basic_string_buffer<Char, Allocator>::long_buf
 {
+    // TODO: use `iterator` instead of `pointer`
+    using iterator = basic_string_buffer<Char, Allocator>::pointer;
+    using const_iterator = basic_string_buffer<Char, Allocator>::const_pointer;
+
+    [[nodiscard]] constexpr iterator
+    begin()
+    {
+        return data_;
+    }
+
+    [[nodiscard]] constexpr iterator
+    end()
+    {
+        return begin() + length();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    begin() const
+    {
+        return data_;
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    end() const
+    {
+        return begin() + length();
+    }
+
+    [[nodiscard]] constexpr size_type
+    length() const
+    {
+        return size_;
+    }
+
+    pointer data_{ nullptr };
+    size_type size_{ 0 };
+    size_type capacity_ : (sizeof(size_type) - 1) * CHAR_BIT{ 0 };
+};
+
+template <typename Char, typename Allocator>
+struct basic_string_buffer<Char, Allocator>::short_buf
+{
+    static constexpr size_type capacity{ sizeof(long_buf) / sizeof(value_type) };
+    static_assert(capacity > 1);
+
+private:
+    using container_type = std::array<value_type, capacity>;
+
+public:
+    using iterator = container_type::iterator;
+    using const_iterator = container_type::const_iterator;
+
+    [[nodiscard]] constexpr iterator
+    begin()
+    {
+        return data_.begin();
+    }
+
+    [[nodiscard]] constexpr iterator
+    end()
+    {
+        return begin() + length();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    begin() const
+    {
+        return data_.begin();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    end() const
+    {
+        return begin() + length();
+    }
+
+    [[nodiscard]] constexpr size_type
+    length() const
+    {
+        return std::ranges::find(data_, value_type{}) - begin();
+    }
+
+    std::array<value_type, capacity> data_{};
 };
 
 } // namespace sso::detail

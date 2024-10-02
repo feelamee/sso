@@ -178,4 +178,12 @@ TEST_SUITE("sso")
         REQUIRE(std::is_default_constructible_v<sso::string>);
         static_assert(sizeof(sso::string) == 24);
     }
+
+    TEST_CASE("move c-tor")
+    {
+        std::string_view const _123{ "123" };
+        sso::string s{ sso::string{ _123 } };
+
+        REQUIRE_EQ(s, _123);
+    }
 }

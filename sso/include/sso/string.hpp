@@ -29,6 +29,8 @@ public:
     using const_pointer = allocator_traits::const_pointer;
     using pointer = allocator_traits::pointer;
     using allocator_type = allocator_traits::allocator_type;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
 
     using string_view = std::basic_string_view<Char>;
 
@@ -37,7 +39,10 @@ public:
     {
     }
 
-    constexpr basic_string(basic_string&& other) noexcept { swap(*this, other); }
+    constexpr basic_string(basic_string&& other) noexcept
+    {
+        swap(*this, other);
+    }
 
     explicit constexpr basic_string(allocator_type const& allocator = allocator_type())
         : buffer(allocator)
@@ -50,7 +55,7 @@ public:
     }
 
     explicit constexpr basic_string(string_view other)
-        : buffer(std::move(other))
+        : buffer(other)
     {
     }
 
@@ -234,6 +239,30 @@ public:
         }
 
         return (*this)[position];
+    }
+
+    [[nodiscard]] constexpr iterator
+    begin()
+    {
+        return buffer.begin();
+    }
+
+    [[nodiscard]] constexpr iterator
+    end()
+    {
+        return buffer.end();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    begin() const
+    {
+        return buffer.begin();
+    }
+
+    [[nodiscard]] constexpr const_iterator
+    end() const
+    {
+        return buffer.end();
     }
 
 private:
