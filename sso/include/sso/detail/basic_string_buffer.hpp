@@ -1,11 +1,11 @@
 #pragma once
 
+#include <sso/util.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <memory>
-
-#include "sso/util.hpp"
 
 namespace sso::detail
 {
@@ -80,7 +80,7 @@ public:
         {
             set_long();
             auto* const buf{ get_long() };
-            reserve(other.size() + 1);
+            reserve(other.size());
 
             std::ranges::copy(other, this->begin());
             buf->size_ = other.size();
@@ -198,18 +198,16 @@ public:
         if (count > max_size())
             throw std::length_error("`count` must not be greater than `max_size()`");
 
-        basic_string_buffer buf{ get_allocator() };
-        buf.set_long();
-        auto* long_buf = buf.get_long();
-        long_buf->capacity_ = count + 1;
-        long_buf->data_ = allocator_traits::allocate(buf.allocator(), buf.capacity());
+        auto const capacity{ count + 1 };
+        auto* const data{ allocator_traits::allocate(allocator(), capacity) };
 
-        std::ranges::copy(*this, buf.begin());
+        std::ranges::copy(*this, data);
 
-        long_buf->size_ = length();
-        *(long_buf->data_ + long_buf->size_) = value_type{};
-
-        swap(*this, buf);
+        this->set_long();
+        auto* const buf{ get_long() };
+        buf->capacity_ = capacity;
+        buf->size_ = length();
+        *(buf->data_ + buf->size_) = value_type{};
     }
 
     [[nodiscard]] constexpr iterator

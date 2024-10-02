@@ -1,10 +1,10 @@
-#include <memory_resource>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #define DOCTEST_CONFIG_VOID_CAST_EXPRESSIONS
 #include <doctest/doctest.h>
 
 #include <sso/string.hpp>
 
+#include <memory_resource>
 #include <ranges>
 #include <type_traits>
 
@@ -28,6 +28,8 @@ TEST_SUITE("sso")
         REQUIRE(requires { typename sso::string::allocator_type; });
         REQUIRE(requires { typename sso::string::string_view; });
         REQUIRE(requires { typename sso::string::reference; });
+        REQUIRE(requires { typename sso::string::iterator; });
+        REQUIRE(requires { typename sso::string::const_iterator; });
     }
 
     TEST_CASE("ctor's")
@@ -188,13 +190,12 @@ TEST_SUITE("sso")
         REQUIRE_EQ(s, _123);
     }
 
-    TEST_CASE("sso")
+    TEST_CASE_TEMPLATE("sso", CharType, char, char8_t, char16_t, char32_t, wchar_t)
     {
-        using char_type = char;
-        using string = sso::basic_string<char_type, std::pmr::polymorphic_allocator<char_type>>;
-        string::allocator_type allocator{ std::pmr::null_memory_resource() };
+        using string = sso::basic_string<CharType, std::pmr::polymorphic_allocator<CharType>>;
+        typename string::allocator_type allocator{ std::pmr::null_memory_resource() };
 
-        std::size_t const max_small_string_size{ 23 }; // without null-terminator
+        std::size_t const max_small_string_size{ 23 / sizeof(CharType) }; // without null-terminator
         REQUIRE_NOTHROW(string{ max_small_string_size, 'a' });
         REQUIRE_THROWS_AS(string(max_small_string_size + 1, 'a', allocator), std::bad_alloc);
     }

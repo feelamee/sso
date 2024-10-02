@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sso/detail/basic_string_buffer.hpp>
 #include <sso/util.hpp>
 
 #include <algorithm>
@@ -7,8 +8,6 @@
 #include <format>
 #include <memory>
 #include <string_view>
-
-#include "sso/detail/basic_string_buffer.hpp"
 
 namespace sso
 {
