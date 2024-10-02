@@ -6,7 +6,6 @@
 #include <cassert>
 #include <format>
 #include <memory>
-#include <ranges>
 #include <string_view>
 
 #include "sso/detail/basic_string_buffer.hpp"
@@ -29,38 +28,38 @@ public:
     using const_pointer = allocator_traits::const_pointer;
     using pointer = allocator_traits::pointer;
     using allocator_type = allocator_traits::allocator_type;
-    using iterator = pointer;
-    using const_iterator = const_pointer;
+    using iterator = basic_string_buffer::iterator;
+    using const_iterator = basic_string_buffer::const_iterator;
 
     using string_view = std::basic_string_view<Char>;
 
     constexpr basic_string(basic_string const& other)
-        : basic_string(static_cast<string_view>(other))
+        : basic_string{ static_cast<string_view>(other) }
     {
     }
 
     constexpr basic_string(basic_string&& other) noexcept
+        : buffer{ static_cast<basic_string_buffer&&>(other.buffer) }
     {
-        swap(*this, other);
     }
 
     explicit constexpr basic_string(allocator_type const& allocator = allocator_type())
-        : buffer(allocator)
+        : buffer{ allocator }
     {
     }
 
     constexpr basic_string(size_type size, value_type value, allocator_type const& allocator = allocator_type())
-        : buffer(size, value, allocator)
+        : buffer{ size, value, allocator }
     {
     }
 
     explicit constexpr basic_string(string_view other)
-        : buffer(other)
+        : buffer{ other }
     {
     }
 
     explicit constexpr basic_string(value_type const* c_str)
-        : basic_string(string_view(c_str))
+        : basic_string{ string_view(c_str) }
     {
     }
 
@@ -149,20 +148,7 @@ public:
     [[nodiscard]] friend constexpr bool
     operator==(basic_string const& l, basic_string const& r) noexcept
     {
-        if (l.size() != r.size()) return false;
-
-        // TODO: replace with `std::equal` after implementing iterator
-        bool res = true;
-        for (auto const i : std::views::iota(size_type{ 0 }, l.size()))
-        {
-            if (l[i] != r[i])
-            {
-                res = false;
-                break;
-            }
-        }
-
-        return res;
+        return std::ranges::equal(l, r);
     }
 
     [[nodiscard]] friend constexpr bool
@@ -219,8 +205,7 @@ public:
     [[nodiscard]] constexpr const_pointer
     c_str() const noexcept
     {
-        // TODO: for now, while SSO isn't implemented
-        return empty() ? "" : data();
+        return data();
     }
 
     constexpr void
@@ -229,7 +214,7 @@ public:
         buffer.clear();
     }
 
-    //! @throw `std::out_of_range` if `position >= size()`
+    //! @throws `std::out_of_range` if `position >= size()`
     [[nodiscard]] constexpr reference
     at(size_type position)
     {

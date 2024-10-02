@@ -4,8 +4,6 @@
 #include <array>
 #include <cassert>
 #include <memory>
-#include <ranges>
-#include <span>
 
 #include "sso/util.hpp"
 
@@ -26,7 +24,7 @@ public:
     using const_pointer = allocator_traits::const_pointer;
     using pointer = allocator_traits::pointer;
     using allocator_type = allocator_traits::allocator_type;
-    using iterator = pointer;
+    using iterator = pointer; //< TODO: use thin wrapper to prevent implicit conversion to/from pointer
     using const_iterator = const_pointer;
 
     using string_view = std::basic_string_view<Char>;
@@ -52,24 +50,31 @@ public:
     }
 
     constexpr basic_string_buffer(basic_string_buffer&& other) noexcept
+        : basic_string_buffer{ other.get_allocator() }
     {
-        unimplemented();
-        // other.data_ = nullptr;
-        // other.size_ = 0;
-        // other.capacity_ = 0;
+        if (other.is_long())
+        {
+            *get_long() = *other.get_long();
+        } else
+        {
+            *get_short() = *other.get_short();
+        }
     }
 
     constexpr basic_string_buffer(size_type size, value_type value,
                                   allocator_type const& allocator = allocator_type())
+        : basic_string_buffer{ allocator }
     {
         reserve(size);
-        std::fill_n(data(), size, value);
-        *(data() + length()) = value_type{};
 
+        std::fill_n(this->begin(), size, value);
         if (is_long()) get_long()->size_ = size;
+
+        *(data() + length()) = value_type{};
     }
 
     explicit constexpr basic_string_buffer(string_view other)
+        : basic_string_buffer{}
     {
         if (other.size() >= short_buf::capacity)
         {
@@ -182,22 +187,22 @@ public:
     [[nodiscard]] constexpr size_type
     max_size() const
     {
-        unimplemented();
+        return std::max(long_buf::max_size(), short_buf::max_size());
     }
 
-    //! @throw `std::length_error` if `count > max_size()`
+    //! @throws `std::length_error` if `count > max_size()`
     constexpr void
     reserve(size_type count)
     {
-        if (count + 1 <= capacity()) return;
+        if (count < capacity()) return;
         if (count > max_size())
             throw std::length_error("`count` must not be greater than `max_size()`");
 
-        basic_string_buffer buf;
+        basic_string_buffer buf{ get_allocator() };
         buf.set_long();
         auto* long_buf = buf.get_long();
         long_buf->capacity_ = count + 1;
-        long_buf->data_ = allocator_traits::allocate(allocator(), long_buf->capacity_);
+        long_buf->data_ = allocator_traits::allocate(buf.allocator(), buf.capacity());
 
         std::ranges::copy(*this, buf.begin());
 
@@ -318,10 +323,7 @@ private:
         return reinterpret_cast<short_buf*>(data_.data());
     }
 
-    static_assert(sizeof(long_buf) == sizeof(short_buf),
-                  "size of long and short buffers must be equal");
-
-    std::array<std::byte, sizeof(long_buf)> data_{};
+    std::array<std::byte, std::max(sizeof(long_buf), sizeof(short_buf))> data_{};
 
     [[no_unique_address]] Allocator allocator_;
 };
@@ -361,6 +363,12 @@ struct basic_string_buffer<Char, Allocator>::long_buf
     length() const
     {
         return size_;
+    }
+
+    [[nodiscard]] static constexpr size_type
+    max_size()
+    {
+        return size_type{ 1 } << ((sizeof(size_type) - 1) * CHAR_BIT);
     }
 
     pointer data_{ nullptr };
@@ -411,7 +419,13 @@ public:
         return std::ranges::find(data_, value_type{}) - begin();
     }
 
-    std::array<value_type, capacity> data_{};
+    [[nodiscard]] static constexpr size_type
+    max_size()
+    {
+        return capacity - 1;
+    }
+
+    std::array<value_type, capacity - 1> data_{};
 };
 
 } // namespace sso::detail

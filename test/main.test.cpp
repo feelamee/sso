@@ -1,3 +1,4 @@
+#include <memory_resource>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #define DOCTEST_CONFIG_VOID_CAST_EXPRESSIONS
 #include <doctest/doctest.h>
@@ -182,8 +183,19 @@ TEST_SUITE("sso")
     TEST_CASE("move c-tor")
     {
         std::string_view const _123{ "123" };
-        sso::string s{ sso::string{ _123 } };
+        sso::string s{ static_cast<sso::string&&>(sso::string{ _123 }) };
 
         REQUIRE_EQ(s, _123);
+    }
+
+    TEST_CASE("sso")
+    {
+        using char_type = char;
+        using string = sso::basic_string<char_type, std::pmr::polymorphic_allocator<char_type>>;
+        string::allocator_type allocator{ std::pmr::null_memory_resource() };
+
+        std::size_t const max_small_string_size{ 23 }; // without null-terminator
+        REQUIRE_NOTHROW(string{ max_small_string_size, 'a' });
+        REQUIRE_THROWS_AS(string(max_small_string_size + 1, 'a', allocator), std::bad_alloc);
     }
 }
