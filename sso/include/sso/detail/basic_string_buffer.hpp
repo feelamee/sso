@@ -213,25 +213,25 @@ public:
     [[nodiscard]] constexpr iterator
     begin()
     {
-        return is_long() ? get_long()->begin() : get_short()->begin();
+        return is_long() ? get_long()->data() : get_short()->data();
     }
 
     [[nodiscard]] constexpr iterator
     end()
     {
-        return is_long() ? get_long()->end() : get_short()->end();
+        return begin() + length();
     }
 
     [[nodiscard]] constexpr const_iterator
     begin() const
     {
-        return is_long() ? get_long()->begin() : get_short()->begin();
+        return is_long() ? get_long()->data() : get_short()->data();
     }
 
     [[nodiscard]] constexpr const_iterator
     end() const
     {
-        return is_long() ? get_long()->end() : get_short()->end();
+        return begin() + length();
     }
 
 private:
@@ -329,32 +329,19 @@ private:
 template <typename Char, typename Allocator>
 struct basic_string_buffer<Char, Allocator>::long_buf
 {
-    // TODO: use `iterator` instead of `pointer`
-    using iterator = basic_string_buffer<Char, Allocator>::pointer;
-    using const_iterator = basic_string_buffer<Char, Allocator>::const_pointer;
+    using pointer = basic_string_buffer<Char, Allocator>::pointer;
+    using const_pointer = basic_string_buffer<Char, Allocator>::const_pointer;
 
-    [[nodiscard]] constexpr iterator
-    begin()
+    [[nodiscard]] constexpr pointer
+    data()
     {
         return data_;
     }
 
-    [[nodiscard]] constexpr iterator
-    end()
-    {
-        return begin() + length();
-    }
-
-    [[nodiscard]] constexpr const_iterator
-    begin() const
+    [[nodiscard]] constexpr const_pointer
+    data() const
     {
         return data_;
-    }
-
-    [[nodiscard]] constexpr const_iterator
-    end() const
-    {
-        return begin() + length();
     }
 
     [[nodiscard]] constexpr size_type
@@ -384,37 +371,25 @@ private:
     using container_type = std::array<value_type, capacity>;
 
 public:
-    using iterator = container_type::iterator;
-    using const_iterator = container_type::const_iterator;
+    using pointer = container_type::iterator;
+    using const_pointer = container_type::const_iterator;
 
-    [[nodiscard]] constexpr iterator
-    begin()
+    [[nodiscard]] constexpr pointer
+    data()
     {
-        return data_.begin();
+        return data_.data();
     }
 
-    [[nodiscard]] constexpr iterator
-    end()
+    [[nodiscard]] constexpr const_pointer
+    data() const
     {
-        return begin() + length();
-    }
-
-    [[nodiscard]] constexpr const_iterator
-    begin() const
-    {
-        return data_.begin();
-    }
-
-    [[nodiscard]] constexpr const_iterator
-    end() const
-    {
-        return begin() + length();
+        return data_.data();
     }
 
     [[nodiscard]] constexpr size_type
     length() const
     {
-        return std::ranges::find(data_, value_type{}) - begin();
+        return std::ranges::find(data_, value_type{}) - std::ranges::begin(data_);
     }
 
     [[nodiscard]] static constexpr size_type
