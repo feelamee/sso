@@ -247,4 +247,25 @@ TEST_SUITE("sso")
             REQUIRE_EQ(s, s123 + s123);
         }
     }
+    TEST_CASE("assign")
+    {
+        char const* const s_123{ "123" };
+        sso::string s;
+
+        SUBCASE("")
+        {
+            s = s_123;
+            REQUIRE_EQ(s, s_123);
+        }
+        SUBCASE("")
+        {
+            s = std::string_view{ s_123 };
+            REQUIRE_EQ(s, s_123);
+        }
+        SUBCASE("")
+        {
+            s = sso::string{ s_123 };
+            REQUIRE_EQ(s, s_123);
+        }
+    }
 }

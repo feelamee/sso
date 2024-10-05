@@ -74,13 +74,11 @@ public:
     }
 
     constexpr basic_string&
-    operator=(std::ranges::input_range auto&& other)
+    operator=(string_view other)
     {
-        replace(0, length(), std::forward<decltype(other)>(other));
+        replace(0, length(), other);
         return *this;
     }
-
-    constexpr basic_string& operator=(basic_string&&) = delete;
 
     [[nodiscard]] constexpr
     operator string_view() const noexcept
