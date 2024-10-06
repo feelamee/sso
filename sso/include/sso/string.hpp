@@ -7,6 +7,7 @@
 #include <cassert>
 #include <format>
 #include <memory>
+#include <ranges>
 #include <string_view>
 
 namespace sso
@@ -69,6 +70,13 @@ public:
 
         swap(*this, other);
 
+        return *this;
+    }
+
+    constexpr basic_string&
+    operator=(std::ranges::input_range auto&& other)
+    {
+        replace(0, length(), std::forward<decltype(other)>(other));
         return *this;
     }
 
@@ -254,6 +262,12 @@ public:
     reserve(size_type size)
     {
         buffer.reserve(size);
+    }
+
+    constexpr void
+    replace(size_type pos, size_type count, string_view src)
+    {
+        buffer.replace(pos, count, src);
     }
 
 private:

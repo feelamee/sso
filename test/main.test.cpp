@@ -212,4 +212,39 @@ TEST_SUITE("sso")
         s.reserve(capacity);
         REQUIRE_GE(s.capacity(), capacity);
     }
+
+    TEST_CASE("replace")
+    {
+        std::string_view const _123{ "123" };
+        sso::string s;
+        s.replace(0, 0, _123);
+        REQUIRE_EQ(s, _123);
+
+        s.replace(0, s.size(), "");
+        REQUIRE_EQ(s, "");
+
+        SUBCASE("")
+        {
+            s.replace(0, 0, _123);
+            s.replace(0, 0, _123);
+            s.replace(0, 0, _123);
+            std::string s123{ _123 };
+            REQUIRE_EQ(s, s123 + s123 + s123);
+        }
+        SUBCASE("")
+        {
+            s.replace(0, 0, _123);
+            s.replace(3, 0, _123);
+            s.replace(6, 0, _123);
+            std::string s123{ _123 };
+            REQUIRE_EQ(s, s123 + s123 + s123);
+        }
+        SUBCASE("")
+        {
+            std::string s123{ _123 };
+            s.replace(0, 0, s123 + s123 + s123);
+            s.replace(3, 6, _123);
+            REQUIRE_EQ(s, s123 + s123);
+        }
+    }
 }

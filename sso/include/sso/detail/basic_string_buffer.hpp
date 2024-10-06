@@ -6,6 +6,7 @@
 #include <array>
 #include <cassert>
 #include <memory>
+#include <ranges>
 
 namespace sso::detail
 {
@@ -219,6 +220,31 @@ public:
         return begin() + length();
     }
 
+    //! @pre `pos + count <= lenght()`
+    constexpr void
+    replace(size_type pos, size_type count, string_view src)
+    {
+        // TODO: optimize by removing `reserve`
+        assert(pos + count <= length());
+
+        auto const src_size{ std::ranges::size(src) };
+        auto const new_size{ length() + src_size - count };
+        reserve(new_size);
+
+        auto const rest{ *this | std::views::drop(pos + count) };
+
+        if (count > src_size)
+        {
+            std::ranges::move(rest, begin() + pos + src_size);
+        } else if (count < src_size)
+        {
+            std::ranges::move_backward(rest, end() + src_size - count);
+        }
+
+        std::ranges::copy(src, begin() + pos);
+        set_length(new_size);
+    }
+
 private:
     struct long_buf;
     struct short_buf;
@@ -273,7 +299,7 @@ private:
     }
 
     //! @pre `capacity() >= size`
-    //! @post `length() == length`
+    //! @post `length() <= length`, due to possibility of '\0' inside string before `data() + size`
     constexpr void
     set_length(size_type size)
     {
@@ -282,7 +308,7 @@ private:
         if (is_long()) get_long()->size_ = size;
         *(data() + size) = value_type{};
 
-        assert(length() == size);
+        assert(length() <= size);
     }
 
     [[nodiscard]] constexpr allocator_type&
