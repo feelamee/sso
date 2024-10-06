@@ -249,6 +249,13 @@ public:
         return buffer.end();
     }
 
+    //! @throws `std::length_error` if `count > max_size()`
+    constexpr void
+    reserve(size_type size)
+    {
+        buffer.reserve(size);
+    }
+
 private:
     detail::basic_string_buffer<value_type, allocator_type> buffer;
 };

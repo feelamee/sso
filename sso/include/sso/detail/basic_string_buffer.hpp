@@ -37,6 +37,7 @@ public:
     explicit constexpr basic_string_buffer(allocator_type const& allocator) noexcept(std::is_nothrow_constructible_v<allocator_type>)
         : allocator_(allocator)
     {
+        set_short();
         construct_short();
 
         assert(!is_long());
@@ -52,9 +53,11 @@ public:
     {
         if (other.is_long())
         {
+            set_long();
             *construct_long() = *other.get_long();
         } else
         {
+            set_short();
             *construct_short() = *other.get_short();
         }
     }
@@ -114,9 +117,9 @@ public:
     [[nodiscard]] constexpr size_type
     capacity() const
     {
-        if (is_long()) return get_long()->capacity_;
+        if (is_long()) return get_long()->capacity_ - 1;
 
-        return short_buf::capacity;
+        return short_buf::capacity - 1;
     }
 
     //! @return [ `data()`, `data() + size()` ).
@@ -174,7 +177,7 @@ public:
     constexpr void
     reserve(size_type count)
     {
-        if (count < capacity()) return;
+        if (count <= capacity()) return;
         if (count > max_size())
             throw std::length_error("`count` must not be greater than `max_size()`");
 
@@ -188,6 +191,7 @@ public:
         set_long();
         auto* const buf{ construct_long() };
         buf->capacity_ = capacity;
+        buf->data_ = data;
         set_length(size);
     }
 
@@ -224,7 +228,7 @@ private:
     {
         if (is_long())
         {
-            allocator_traits::deallocate(allocator(), data(), capacity());
+            allocator_traits::deallocate(allocator(), data(), capacity() + 1);
             std::destroy_at(get_long());
         } else
         {
@@ -268,12 +272,12 @@ private:
         assert(!is_long());
     }
 
-    //! @pre `capacity() > size`
+    //! @pre `capacity() >= size`
     //! @post `length() == length`
     constexpr void
     set_length(size_type size)
     {
-        assert(capacity() > size);
+        assert(capacity() >= size);
 
         if (is_long()) get_long()->size_ = size;
         *(data() + size) = value_type{};

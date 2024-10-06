@@ -199,4 +199,17 @@ TEST_SUITE("sso")
         REQUIRE_NOTHROW(string{ max_small_string_size, 'a' });
         REQUIRE_THROWS_AS(string(max_small_string_size + 1, 'a', allocator), std::bad_alloc);
     }
+
+    TEST_CASE("reserve")
+    {
+        using size_type = sso::string::size_type;
+
+        size_type size{ 50 };
+        sso::string s{ size, 'x' };
+        REQUIRE_GE(s.capacity(), size);
+
+        size_type capacity{ 100 };
+        s.reserve(capacity);
+        REQUIRE_GE(s.capacity(), capacity);
+    }
 }
