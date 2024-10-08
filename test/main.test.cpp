@@ -247,6 +247,7 @@ TEST_SUITE("sso")
             REQUIRE_EQ(s, s123 + s123);
         }
     }
+
     TEST_CASE("assign")
     {
         char const* const s_123{ "123" };
@@ -267,5 +268,107 @@ TEST_SUITE("sso")
             s = sso::string{ s_123 };
             REQUIRE_EQ(s, s_123);
         }
+    }
+
+    TEST_CASE("erase")
+    {
+        sso::string s{ "123" };
+        REQUIRE_EQ(s, "123");
+
+        SUBCASE("")
+        {
+            auto it = s.erase(s.begin());
+            REQUIRE_EQ(it, s.begin());
+            REQUIRE_EQ(s, "23");
+
+            it = s.erase(s.begin());
+            REQUIRE_EQ(it, s.begin());
+            REQUIRE_EQ(s, "3");
+
+            it = s.erase(s.begin());
+            REQUIRE_EQ(it, s.begin());
+            REQUIRE_EQ(s, "");
+        }
+        SUBCASE("")
+        {
+            auto it = s.erase(s.begin() + 1);
+            REQUIRE_EQ(it, s.begin() + 1);
+            REQUIRE_EQ(s, "13");
+
+            it = s.erase(s.begin());
+            REQUIRE_EQ(it, s.begin());
+            REQUIRE_EQ(s, "3");
+        }
+        SUBCASE("")
+        {
+            auto it = s.erase(s.begin(), s.end());
+            REQUIRE_EQ(it, s.begin());
+            REQUIRE_EQ(s, "");
+            REQUIRE(s.empty());
+        }
+        SUBCASE("")
+        {
+            auto it = s.erase(s.begin() + 1, s.end());
+            REQUIRE_EQ(it, s.end());
+            REQUIRE_EQ(s, "1");
+        }
+    }
+
+    TEST_CASE("push_back")
+    {
+        sso::string s;
+        REQUIRE(s.empty());
+
+        s.push_back('x');
+        REQUIRE(!s.empty());
+        REQUIRE_EQ(s.back(), 'x');
+    }
+
+    TEST_CASE("pop_back")
+    {
+        sso::string s{ "123" };
+        REQUIRE(!s.empty());
+        REQUIRE_EQ(s.back(), '3');
+
+        s.pop_back();
+        REQUIRE(!s.empty());
+        REQUIRE_EQ(s.back(), '2');
+    }
+
+    TEST_CASE("append")
+    {
+        sso::string s123{ "123" };
+        sso::string s;
+        REQUIRE(s.empty());
+
+        REQUIRE_EQ(s.append(s123), s123);
+        REQUIRE_EQ(s.append(s), s123 + s123);
+        REQUIRE_EQ(s.append(s), s123 + s123 + s123 + s123);
+    }
+
+    TEST_CASE("operator+")
+    {
+        std::string std{ "123" };
+        sso::string sso{ std };
+        REQUIRE_EQ(sso, std);
+        REQUIRE_EQ(std + std, sso + sso);
+        REQUIRE_EQ(std + std + std, sso + sso + sso);
+        REQUIRE_EQ(std + sso.c_str(), sso + std);
+    }
+
+    TEST_CASE("operator+=")
+    {
+        std::string const s123{ "123" };
+        std::string std{ s123 };
+        sso::string sso{ std };
+        REQUIRE_EQ(sso, std);
+        REQUIRE_EQ(std += s123, sso += s123);
+
+        std += s123;
+        std += s123;
+        sso += s123;
+        sso += s123;
+        REQUIRE_EQ(std, sso);
+        REQUIRE_EQ(std + sso.c_str(), sso + std);
     }
 }

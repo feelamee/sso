@@ -69,7 +69,6 @@ public:
     {
         reserve(size);
 
-        // TODO: replace with assign from range `std::views::repeat`
         std::fill_n(begin(), size, value);
         set_length(size);
     }
@@ -88,8 +87,8 @@ public:
         }
 
         reserve(other.size());
-        std::ranges::copy(other, begin());
         set_length(other.length());
+        std::ranges::copy(other, begin());
     }
 
     constexpr basic_string_buffer&
@@ -118,9 +117,7 @@ public:
     [[nodiscard]] constexpr size_type
     capacity() const
     {
-        if (is_long()) return get_long()->capacity_ - 1;
-
-        return short_buf::capacity - 1;
+        return real_capacity() - 1;
     }
 
     //! @return [ `data()`, `data() + size()` ).
@@ -162,12 +159,6 @@ public:
         return data();
     }
 
-    constexpr void
-    clear() noexcept
-    {
-        set_length(0);
-    }
-
     [[nodiscard]] constexpr size_type
     max_size() const
     {
@@ -178,8 +169,8 @@ public:
     constexpr void
     reserve(size_type count)
     {
-        if (count <= capacity()) return;
-        if (count > max_size())
+        if (count + 1 <= real_capacity()) return;
+        if (count + 1 > max_size())
             throw std::length_error("`count` must not be greater than `max_size()`");
 
         auto const capacity{ count + 1 };
@@ -221,6 +212,11 @@ public:
     }
 
     //! @pre `pos + count <= lenght()`
+    //! @pre `src` isn't overlap `*this` TODO: get rid of `reserve` to fix this
+    //! @post possible reallocation if `src.size() > count`,
+    //!       If reallocation take place all iterators, pointers, references
+    //!       are invalidated. Else invalidates only iterators in range
+    //!       [ `begin() + pos` , `end()` ]
     constexpr void
     replace(size_type pos, size_type count, string_view src)
     {
@@ -248,6 +244,14 @@ public:
 private:
     struct long_buf;
     struct short_buf;
+
+    [[nodiscard]] constexpr size_type
+    real_capacity() const
+    {
+        if (is_long()) return get_long()->capacity_;
+
+        return short_buf::capacity;
+    }
 
     constexpr void
     destroy()

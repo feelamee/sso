@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <cassert>
 #include <format>
+#include <iosfwd>
 #include <memory>
-#include <ranges>
 #include <string_view>
 
 namespace sso
@@ -30,6 +30,7 @@ public:
     using allocator_type = allocator_traits::allocator_type;
     using iterator = basic_string_buffer::iterator;
     using const_iterator = basic_string_buffer::const_iterator;
+    using difference_type = allocator_traits::difference_type;
 
     using string_view = std::basic_string_view<Char>;
 
@@ -216,7 +217,7 @@ public:
     constexpr void
     clear() noexcept
     {
-        buffer.clear();
+        replace(0, size(), string_view{});
     }
 
     //! @throws `std::out_of_range` if `position >= size()`
@@ -266,6 +267,89 @@ public:
     replace(size_type pos, size_type count, string_view src)
     {
         buffer.replace(pos, count, src);
+    }
+
+    constexpr void
+    push_back(value_type value)
+    {
+        replace(size(), 0, string_view{ &value, 1 });
+    }
+
+    constexpr void
+    pop_back()
+    {
+        replace(size() - 1, 1, string_view{});
+    }
+
+    constexpr basic_string&
+    append(string_view str)
+    {
+        replace(size(), 0, str);
+
+        return *this;
+    }
+
+    //! @pre `begin() <= it < end()`
+    constexpr iterator
+    erase(const_iterator pos)
+    {
+        assert(begin() <= pos);
+        assert(pos < end());
+
+        difference_type const i{ pos - begin() };
+        replace(i, 1, string_view{});
+
+        return begin() + i;
+    }
+
+    //! @pre `begin() <= first <= end()`
+    //! @pre `begin() <= last <= end()`
+    //! @pre `first <= last`
+    constexpr iterator
+    erase(const_iterator first, const_iterator last)
+    {
+        assert(begin() <= first);
+        assert(first <= end());
+        assert(begin() <= last);
+        assert(last <= end());
+        assert(first <= last);
+
+        difference_type const pos{ first - begin() };
+        difference_type const size{ last - first };
+        replace(pos, size, string_view{});
+
+        return begin() + pos;
+    }
+
+    //! @pre `begin() <= pos < end()`
+    constexpr basic_string&
+    insert(const_iterator pos, string_view str)
+    {
+        assert(begin() <= pos);
+        assert(pos <= end());
+
+        difference_type const i{ pos - begin() };
+        replace(i, str.size(), str);
+
+        return *this;
+    }
+
+    friend constexpr basic_string
+    operator+(basic_string l, string_view r)
+    {
+        return l.append(r);
+    }
+
+    constexpr basic_string&
+    operator+=(string_view r)
+    {
+        return append(r);
+    }
+
+    friend constexpr std::ostream&
+    operator<<(std::ostream& out, basic_string str)
+    {
+        return out << static_cast<string_view>(str);
     }
 
 private:
