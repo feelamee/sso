@@ -329,7 +329,7 @@ public:
         assert(pos <= end());
 
         difference_type const i{ pos - begin() };
-        replace(i, str.size(), str);
+        replace(i, 0, str);
 
         return *this;
     }

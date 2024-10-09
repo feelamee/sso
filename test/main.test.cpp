@@ -371,4 +371,25 @@ TEST_SUITE("sso")
         REQUIRE_EQ(std, sso);
         REQUIRE_EQ(std + sso.c_str(), sso + std);
     }
+
+    TEST_CASE("insert")
+    {
+        std::string_view const s123{ "123" };
+        sso::string sso;
+        std::string std;
+        REQUIRE(sso.empty());
+        REQUIRE(std.empty());
+
+        sso.insert(sso.begin(), s123);
+        std.insert(std.begin(), s123.begin(), s123.end());
+        REQUIRE_EQ(sso, std);
+
+        sso.insert(sso.begin() + 1, s123);
+        std.insert(std.begin() + 1, s123.begin(), s123.end());
+        REQUIRE_EQ(sso, std);
+
+        sso.insert(sso.end() - 1, s123);
+        std.insert(std.end() - 1, s123.begin(), s123.end());
+        REQUIRE_EQ(sso, std);
+    }
 }
