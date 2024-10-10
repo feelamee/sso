@@ -67,10 +67,7 @@ public:
                                   allocator_type const& allocator = allocator_type())
         : basic_string_buffer{ allocator }
     {
-        reserve(size);
-
-        std::fill_n(begin(), size, value);
-        set_length(size);
+        resize(size, value);
     }
 
     explicit constexpr basic_string_buffer(string_view other)
@@ -239,6 +236,19 @@ public:
 
         std::ranges::copy(src, begin() + pos);
         set_length(new_size);
+    }
+
+    constexpr void
+    resize(size_type size, value_type filler = value_type{})
+    {
+        reserve(size);
+
+        if (size > length())
+        {
+            std::fill_n(begin() + length(), size, filler);
+        }
+
+        set_length(size);
     }
 
 private:

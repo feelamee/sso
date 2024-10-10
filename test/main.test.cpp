@@ -7,6 +7,7 @@
 #include <memory_resource>
 #include <ranges>
 #include <type_traits>
+#include <version>
 
 TEST_SUITE("sso")
 {
@@ -391,5 +392,100 @@ TEST_SUITE("sso")
         sso.insert(sso.end() - 1, s123);
         std.insert(std.end() - 1, s123.begin(), s123.end());
         REQUIRE_EQ(sso, std);
+    }
+
+    TEST_CASE("compare")
+    {
+        {
+            sso::string s1{ "1" };
+            sso::string s2{ "2" };
+            REQUIRE_LT(s1, s2);
+            REQUIRE_LT(s1, static_cast<sso::string::string_view>(s2));
+        }
+        {
+            sso::string s1{ "1" };
+            sso::string s2{ "1" };
+            REQUIRE_LE(s1, s2);
+            REQUIRE_GE(s1, s2);
+        }
+    }
+
+    TEST_CASE("starts_with")
+    {
+        sso::string s1{ "1" };
+        sso::string s2{ "1232" };
+        REQUIRE(s2.starts_with(s1));
+        REQUIRE_FALSE(s1.starts_with(s2));
+        REQUIRE(s2.starts_with(""));
+        REQUIRE(s1.starts_with(""));
+    }
+
+    TEST_CASE("ends_with")
+    {
+        sso::string s1{ "2" };
+        sso::string s2{ "1232" };
+        REQUIRE(s2.ends_with(s1));
+        REQUIRE_FALSE(s1.starts_with(s2));
+        REQUIRE(s2.ends_with(""));
+        REQUIRE(s1.ends_with(""));
+    }
+
+#if __cpp_lib_string_contains >= 202011L
+    TEST_CASE("contains")
+    {
+        {
+            sso::string s1{ "23" };
+            sso::string s2{ "1232" };
+            REQUIRE(s2.contains(s1));
+            REQUIRE_FALSE(s1.contains(s2));
+        }
+        {
+            sso::string s1{ "3" };
+            sso::string s2{ "3" };
+            REQUIRE(s2.contains(s1));
+            REQUIRE(s1.contains(s2));
+        }
+        {
+            sso::string s1{ "" };
+            sso::string s2{ "" };
+            REQUIRE(s2.contains(s1));
+            REQUIRE(s1.contains(s2));
+        }
+    }
+#endif
+
+    TEST_CASE("resize")
+    {
+        sso::string s;
+        REQUIRE(s.empty());
+
+        std::string std;
+        REQUIRE(std.empty());
+
+        s.resize(15, 'x');
+        std.resize(15, 'x');
+        REQUIRE_EQ(s.size(), std.size());
+        REQUIRE_EQ(s, std);
+
+        s.resize(0, 'x');
+        std.resize(0, 'x');
+        REQUIRE_EQ(s.size(), std.size());
+        REQUIRE_EQ(s, std);
+
+        s.resize(1000, 'x');
+        std.resize(1000, 'x');
+        REQUIRE_EQ(s.size(), std.size());
+        REQUIRE_EQ(s, std);
+    }
+
+    TEST_CASE("substr")
+    {
+        std::string std{ "21312" };
+        sso::string sso{ std };
+
+        REQUIRE_EQ(std.substr(0, 3), sso.substr(0, 3));
+        REQUIRE_EQ(std.substr(0, 0), sso.substr(0, 0));
+        REQUIRE_EQ(std.substr(0, 3), sso.substr(0, 3));
+        REQUIRE_EQ(std.substr(2, 50), sso.substr(2, 50));
     }
 }

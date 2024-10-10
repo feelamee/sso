@@ -9,6 +9,7 @@
 #include <iosfwd>
 #include <memory>
 #include <string_view>
+#include <version>
 
 namespace sso
 {
@@ -350,6 +351,44 @@ public:
     operator<<(std::ostream& out, basic_string str)
     {
         return out << static_cast<string_view>(str);
+    }
+
+    friend constexpr auto
+    operator<=>(basic_string l, basic_string r)
+    {
+        return static_cast<string_view>(l) <=> static_cast<string_view>(r);
+    }
+
+    constexpr bool
+    starts_with(string_view s)
+    {
+        return static_cast<string_view>(*this).starts_with(s);
+    }
+
+    constexpr bool
+    ends_with(string_view s)
+    {
+        return static_cast<string_view>(*this).ends_with(s);
+    }
+
+#if __cpp_lib_string_contains >= 202011L
+    constexpr bool
+    contains(string_view s)
+    {
+        return static_cast<string_view>(*this).contains(s);
+    }
+#endif
+
+    constexpr basic_string
+    substr(size_type pos, size_type count)
+    {
+        return basic_string{ static_cast<string_view>(*this).substr(pos, count) };
+    }
+
+    constexpr void
+    resize(size_type size, value_type filler = value_type{})
+    {
+        buffer.resize(size, filler);
     }
 
 private:
