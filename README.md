@@ -12,8 +12,8 @@ There are few ideas, which I not implemented:
     now I allocate exactly as much as I need.
     I want to do this behaviour configurable and see few ways:
       - using `std::allocator_traits::allocate_at_least`. Such way user can configure allocation strategy by providing custom allocator. And only in C++23
-      - policy/traits as well as with exceptions
-        this less idiomatic for C++, but more consistent if using same way for exceptions too
+      - policy/traits as well as with exceptions.
+        This less idiomatic for C++, but more consistent if using same way for exceptions too
 
 And there is also one problem(mistake?).
 When string is small (placed on stack) I use simple O(n) algo for calculate length.
